@@ -1,0 +1,36 @@
+---
+#
+- hosts: localhost
+  connection: local
+  vars_files:
+    - vars.yml
+
+  tasks:
+  - block:
+    - name: ensure git is installed
+      apt: name=git state=present
+      
+    - name: install vagrant
+      apt:
+        deb: https://releases.hashicorp.com/vagrant/1.9.1/vagrant_1.9.1_x86_64.deb
+
+    - name: ensure that virtualbox(version 5.0+) is installed
+      apt:
+        name: virtualbox=5.*
+        state: present
+
+    become: yes
+
+  - name: checkout dcos-vagrant repository
+    git: repo=https://github.com/dcos/dcos-vagrant.git dest={{ repo_dir }}
+
+  - name: copy dcos-vagrant configuration
+    copy: src=files/VagrantConfig-1m-2a-1p.yaml dest={{ repo_dir }}/VagrantConfig.yaml
+
+  - name: install vagrant-hostmanager plugin
+    shell: vagrant plugin install vagrant-hostmanager 
+  
+  - name: run vagrant to setup dc/os
+    shell: vagrant up
+    args:
+      chdir: "{{ repo_dir }}/"
